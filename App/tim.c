@@ -1,0 +1,21 @@
+
+
+#include "stm32g030xx.h"
+
+#define  TIMEOUT_INTERVAL 500
+
+
+void Timer_Init(void)
+{
+	RCC->APBENR2 |= RCC_APBENR2_TIM16EN;
+	TIM16->PSC    = 15999;
+	TIM16->ARR    = TIMEOUT_INTERVAL;
+	TIM16->DIER  |= TIM_DIER_UIE;
+	NVIC_EnableIRQ(TIM16_IRQn);
+	NVIC_SetPriority(TIM16_IRQn, 1);
+	TIM16->SR &=~ TIM_SR_CC1IF;
+	TIM16->SR &=~ TIM_SR_UIF;
+	TIM16->CR1   |=  TIM_CR1_CEN;
+}
+
+
