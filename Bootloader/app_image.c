@@ -128,6 +128,18 @@ uint8_t App_Image_Char_To_Num(uint8_t char_data)
 	}
 }
 
+uint8_t App_Image_Checksum_Get(void)
+{
+	uint8_t tmp, data[2];
+	data[0] = app_image_buf[AppImageData.IndexCnt++];
+	data[1] = app_image_buf[AppImageData.IndexCnt++];
+	tmp   = App_Image_Char_To_Num(data[0]);
+	tmp <<= 4;
+	tmp  |= App_Image_Char_To_Num(data[1]);
+	AppImageData.ByteCnt = tmp;
+	return tmp;
+}
+
 
 uint8_t App_Image_Byte_Count_Get(void)
 {
