@@ -72,10 +72,22 @@ uint8_t app_image_buf[] = "\
 
 typedef struct app_image_t{
 	uint32_t BaseAddr;
+	uint32_t CurrAddr;
+	uint8_t  CurrChar;
+	uint8_t  Checksum;
+	uint16_t Reserved1;
 	uint32_t IndexCnt;
 	uint8_t  ByteCnt;
+	uint8_t  Reserved2;
 	uint16_t AddrOffset;
 	uint8_t  RecType;
+	uint8_t  Reserved3;
+	uint16_t Reserved4;
+	uint8_t  DataBlock[64];
+	uint8_t  DataBlock8b[64];
+	uint16_t DataBlock16b[32];
+	uint32_t DataBlock32b[16];
+	uint64_t DataBlock64b[8];
 }app_image_t;
 
 app_image_t AppImageData;
@@ -106,19 +118,19 @@ uint8_t App_Image_Char_To_Num(uint8_t char_data)
 	//process 0-9
 	if( (char_data >= 48) && (char_data <= 57) )
 	{
-		return char_data - 48;
+		return (char_data - 48);
 	}
 	
 	//process A-F
 	else if( (char_data >= 65) && (char_data <= 70) )
 	{
-		return char_data - 55;
+		return (char_data - 55);
 	}
 	
 	//process a-f
 	else if( (char_data >= 97) && (char_data <= 102) )
 	{
-		return char_data - 55;
+		return (char_data - 87);
 	}
 	
 	//error
@@ -131,13 +143,24 @@ uint8_t App_Image_Char_To_Num(uint8_t char_data)
 uint8_t App_Image_Checksum_Get(void)
 {
 	uint8_t tmp, data[2];
-	data[0] = app_image_buf[AppImageData.IndexCnt++];
-	data[1] = app_image_buf[AppImageData.IndexCnt++];
-	tmp   = App_Image_Char_To_Num(data[0]);
-	tmp <<= 4;
-	tmp  |= App_Image_Char_To_Num(data[1]);
-	AppImageData.ByteCnt = tmp;
-	return tmp;
+	uint16_t index;
+	AppImageData.Checksum = 0;
+	index = AppImageData.IndexCnt;
+	while( (app_image_buf[index] != '\r') && 
+		   (app_image_buf[index] != '\n') && 
+	       (app_image_buf[index] != ':')  )
+	{
+		data[0] = app_image_buf[index++];
+		data[1] = app_image_buf[index++];
+		tmp   = App_Image_Char_To_Num(data[0]);
+		tmp <<= 4;
+		tmp  |= App_Image_Char_To_Num(data[1]);
+		//only for debugging
+		AppImageData.CurrChar  = tmp;
+		//calculate checksum
+		AppImageData.Checksum += AppImageData.CurrChar;
+	}
+	return AppImageData.Checksum;
 }
 
 
@@ -184,12 +207,100 @@ uint16_t App_Image_Rec_Type_Get(void)
 	return tmp;
 }
 
+void App_Image_Copy_Data_Block(void)
+{
+	uint8_t  loop_cnt, tmp, data[2], index;
+	index = 0; 
+	for(loop_cnt = 0; loop_cnt < AppImageData.ByteCnt; loop_cnt++)
+	{
+		data[0] = app_image_buf[AppImageData.IndexCnt++];
+		data[1] = app_image_buf[AppImageData.IndexCnt++];
+		tmp   = App_Image_Char_To_Num(data[0]);
+		tmp <<= 4;
+		tmp  |= App_Image_Char_To_Num(data[1]);
+		AppImageData.DataBlock[index++] = tmp;
+	}
+}
+
 void App_Image_Segreget_Fields(void)
 {
+	uint8_t loop_cnt, tmp;
 	App_Image_Skip_Until_Data();
+	App_Image_Checksum_Get();
 	App_Image_Byte_Count_Get();
 	App_Image_Addr_Offset_Get();
 	App_Image_Rec_Type_Get();
+	App_Image_Copy_Data_Block();
+	
+	//extended linear address
+	if(AppImageData.RecType == 0x04)
+	{
+		AppImageData.BaseAddr  = AppImageData.DataBlock[0];
+		AppImageData.BaseAddr <<= 8;
+		AppImageData.BaseAddr |= AppImageData.DataBlock[1];
+		AppImageData.BaseAddr <<= 16;
+		AppImageData.CurrAddr  = AppImageData.BaseAddr; 
+	}
+	
+	//check data address
+	else if(AppImageData.RecType == 0x00)
+	{
+		AppImageData.CurrAddr = AppImageData.BaseAddr + AppImageData.AddrOffset;
+		
+		//make 8 bit data buffer (change endianness)
+		for(loop_cnt = 0; loop_cnt < AppImageData.ByteCnt; loop_cnt++)
+		{
+			if( (loop_cnt & 1) == 0)
+			{
+				AppImageData.DataBlock8b[loop_cnt] = AppImageData.DataBlock[loop_cnt+1];
+			}
+			else
+			{
+				AppImageData.DataBlock8b[loop_cnt] = AppImageData.DataBlock[loop_cnt-1];
+			}
+		}
+		
+		//make 16 bit data buffer
+		tmp = AppImageData.ByteCnt / 2;
+		for(loop_cnt = 0; loop_cnt < tmp; loop_cnt++)
+		{
+			AppImageData.DataBlock16b[loop_cnt]   = AppImageData.DataBlock8b[(loop_cnt << 1) + 0];
+			AppImageData.DataBlock16b[loop_cnt] <<= 8;
+			AppImageData.DataBlock16b[loop_cnt]  |= AppImageData.DataBlock8b[(loop_cnt << 1) + 1];
+		}
+		
+		//make 32 bit data buffer (reverse data order)
+		tmp = AppImageData.ByteCnt / 4;
+		for(loop_cnt = 0; loop_cnt < tmp; loop_cnt++)
+		{
+			AppImageData.DataBlock32b[loop_cnt]   = AppImageData.DataBlock16b[(loop_cnt << 1) + 1];
+			AppImageData.DataBlock32b[loop_cnt] <<= 16;
+			AppImageData.DataBlock32b[loop_cnt]  |= AppImageData.DataBlock16b[(loop_cnt << 1) + 0];
+		}
+		
+		//make 64 bit data buffer
+		tmp = AppImageData.ByteCnt / 8;
+		for(loop_cnt = 0; loop_cnt < tmp; loop_cnt++)
+		{
+			AppImageData.DataBlock64b[loop_cnt]   = AppImageData.DataBlock32b[(loop_cnt << 1) + 0];
+			AppImageData.DataBlock64b[loop_cnt] <<= 32;
+			AppImageData.DataBlock64b[loop_cnt]  |= AppImageData.DataBlock32b[(loop_cnt << 1) + 1];
+		}
+	}
 }
 
-	
+
+uint8_t App_Image_Byte_Cnt_Get(void)
+{
+	return AppImageData.ByteCnt;
+}
+
+uint32_t App_Image_Current_Addr_Get(void)
+{
+	return AppImageData.CurrAddr;
+}
+
+uint64_t App_Image_Data_Get(uint8_t index)
+{
+	return AppImageData.DataBlock64b[index];
+}
