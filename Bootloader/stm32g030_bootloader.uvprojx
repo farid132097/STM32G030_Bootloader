@@ -394,6 +394,16 @@
               <FileType>5</FileType>
               <FilePath>.\app_image.h</FilePath>
             </File>
+            <File>
+              <FileName>boot_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\boot_uart.h</FilePath>
+            </File>
+            <File>
+              <FileName>cdefs.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\cdefs.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -413,6 +423,16 @@
               <FileName>app_image.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app_image.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\boot_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>boot_uart_asm.s</FileName>
+              <FileType>2</FileType>
+              <FilePath>.\boot_uart_asm.s</FilePath>
             </File>
           </Files>
         </Group>
