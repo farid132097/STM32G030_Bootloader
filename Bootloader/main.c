@@ -72,16 +72,17 @@ int main(void)
 			if(button_cnt == 1)
 			{
 				//write data
-				/*do{
+				do
+				{
 					App_Image_Segreget_Fields();
-					//Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x00, App_Image_Data_Get(0));
-					//Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x08, App_Image_Data_Get(1));
+					Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x00, App_Image_Data_Get(0));
+					Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x08, App_Image_Data_Get(1));
 				}
-				while(App_Image_Byte_Cnt_Get() != 16);*/
+				while(App_Image_Byte_Cnt_Get() == 16);
 			}
-			App_Image_Segreget_Fields();
-			Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x00, App_Image_Data_Get(0));
-			Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x08, App_Image_Data_Get(1));
+			//App_Image_Segreget_Fields();
+			//Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x00, App_Image_Data_Get(0));
+			//Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x08, App_Image_Data_Get(1));
 		}
 		
 		
@@ -103,7 +104,7 @@ int main(void)
 		}
 		else if(button_cnt == 2)
 		{
-			//Jump_To_App();
+			Jump_To_App();
 		}
 		
 	}
