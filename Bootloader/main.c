@@ -74,14 +74,14 @@ int main(void)
 				//write data
 				/*do{
 					App_Image_Segreget_Fields();
-					//Flash_Write_DWord(App_Image_Current_Addr_Get(), App_Image_Data_Get(0));
-					//Flash_Write_DWord(App_Image_Current_Addr_Get(), App_Image_Data_Get(1));
+					//Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x00, App_Image_Data_Get(0));
+					//Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x08, App_Image_Data_Get(1));
 				}
 				while(App_Image_Byte_Cnt_Get() != 16);*/
 			}
 			App_Image_Segreget_Fields();
-			Flash_Write_DWord(App_Image_Current_Addr_Get(), App_Image_Data_Get(0));
-			Flash_Write_DWord(App_Image_Current_Addr_Get() + 8, App_Image_Data_Get(1));
+			Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x00, App_Image_Data_Get(0));
+			Flash_Write_DWord(App_Image_Current_Addr_Get() + 0x08, App_Image_Data_Get(1));
 		}
 		
 		

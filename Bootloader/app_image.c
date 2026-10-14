@@ -247,8 +247,10 @@ void App_Image_Segreget_Fields(void)
 	{
 		AppImageData.CurrAddr = AppImageData.BaseAddr + AppImageData.AddrOffset;
 		
+		tmp = AppImageData.ByteCnt;
+		
 		//make 8 bit data buffer (change endianness)
-		for(loop_cnt = 0; loop_cnt < AppImageData.ByteCnt; loop_cnt++)
+		for(loop_cnt = 0; loop_cnt < tmp; loop_cnt++)
 		{
 			if( (loop_cnt & 1) == 0)
 			{
@@ -261,30 +263,48 @@ void App_Image_Segreget_Fields(void)
 		}
 		
 		//make 16 bit data buffer
-		tmp = AppImageData.ByteCnt / 2;
+		tmp /= 2;
 		for(loop_cnt = 0; loop_cnt < tmp; loop_cnt++)
 		{
 			AppImageData.DataBlock16b[loop_cnt]   = AppImageData.DataBlock8b[(loop_cnt << 1) + 0];
 			AppImageData.DataBlock16b[loop_cnt] <<= 8;
 			AppImageData.DataBlock16b[loop_cnt]  |= AppImageData.DataBlock8b[(loop_cnt << 1) + 1];
 		}
+		//if 16 bit buffer is odd numbered
+		if(tmp & 1)
+		{
+			AppImageData.DataBlock16b[tmp] = 0xFFFF;
+			tmp++;
+		}
 		
 		//make 32 bit data buffer (reverse data order)
-		tmp = AppImageData.ByteCnt / 4;
+		tmp /= 2;
 		for(loop_cnt = 0; loop_cnt < tmp; loop_cnt++)
 		{
 			AppImageData.DataBlock32b[loop_cnt]   = AppImageData.DataBlock16b[(loop_cnt << 1) + 1];
 			AppImageData.DataBlock32b[loop_cnt] <<= 16;
 			AppImageData.DataBlock32b[loop_cnt]  |= AppImageData.DataBlock16b[(loop_cnt << 1) + 0];
 		}
+		//if 32 bit buffer is odd numbered
+		if(tmp & 1)
+		{
+			AppImageData.DataBlock32b[tmp] = 0xFFFFFFFF;
+			tmp++;
+		}
 		
 		//make 64 bit data buffer
-		tmp = AppImageData.ByteCnt / 8;
+		tmp /= 2;
 		for(loop_cnt = 0; loop_cnt < tmp; loop_cnt++)
 		{
 			AppImageData.DataBlock64b[loop_cnt]   = AppImageData.DataBlock32b[(loop_cnt << 1) + 0];
 			AppImageData.DataBlock64b[loop_cnt] <<= 32;
 			AppImageData.DataBlock64b[loop_cnt]  |= AppImageData.DataBlock32b[(loop_cnt << 1) + 1];
+		}
+		//if 64 bit buffer is odd numbered
+		if(tmp & 1)
+		{
+			AppImageData.DataBlock64b[tmp] = 0xFFFFFFFFFFFFFFFF;
+			tmp++;
 		}
 	}
 }
